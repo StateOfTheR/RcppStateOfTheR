@@ -1,0 +1,14 @@
+.title-slide {
+  background-image: url(Garde.png);
+  background-size: cover;
+}
+
+
+slides>slide{
+  background-image: url(Slides.png);
+  background-size: cover;
+}
+
+.small-code pre code {
+  font-size: 5px;
+}

@@ -1,0 +1,8 @@
+base
+Rcpp
+RcppArmadillo
+microbenchmark
+ggplot2
+knitr
+magrittr
+profr

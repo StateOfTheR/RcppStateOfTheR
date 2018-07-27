@@ -1,0 +1,271 @@
+---
+title: " RcppArmadillo"
+author: "Timothée Tabouy & Félix Cheysson & Mathieu Carmassi"
+date: "20 juillet 2018"
+output: 
+  ioslides_presentation:
+    css: styles.css
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+## RcppArmadillo : lien entre C++ et R
+<!-- regarder : names(knitr::knit_engines$get()) -->
+Dans un fichier Cpp : 
+```{Rcpp}
+#include "RcppArmadillo.h"
+using namespace arma;  // Evite d'écrire arma::fonctionArmadillo
+// [[Rcpp::depends(RcppArmadillo)]]
+
+// [[Rcpp::export]] // Importe la fonction qui suit dans l'environnement global de R
+mat addition(int a, mat M) {
+  return a + M;
+}
+```
+
+## RcppArmadillo : lien entre C++ et R
+
+Dans un fichier R :
+```{r}
+library(Rcpp)
+sourceCpp("addition.cpp")
+a <- 1
+M <- matrix(1:4,2)
+sumIntMat <- addition(a,M)
+```
+
+## RcppArmadillo : débugger du code C++
+
+Ici on omet volontairement la commande namespace, il faut donc préciser à quel package appartiennent les fonctions.
+```{Rcpp}
+#include "RcppArmadillo.h" 
+// [[Rcpp::depends(RcppArmadillo)]]
+
+// [[Rcpp::export]]
+void printMatrix(arma::mat X) {
+  X.print();
+}
+// [[Rcpp::export]]
+void showMatrix(arma::mat X) {
+  Rcpp::Rcout << "Armadillo matrix is" << std::endl << X << std::endl;
+}
+```
+
+## RcppArmadillo : débugger du code C++ 
+
+On peut ajouter une balise R directement dans le C++, ceci compilera le R en "sourçant" le code C++. On peut ainsi tester directement dans
+le fichier C++, en utilisant R, les fonctons écrites en C++.
+```{Rcpp}
+/*** R
+M <- matrix(1:4,2)
+printMatrix(M)
+showMatrix(M)
+*/
+```
+
+
+## Documentation Armadillo
+<div style="text-align:center">
+<a href="http://arma.sourceforge.net/"><img src="http://arma.sourceforge.net/img/armadillo_logo2.png" alt="MDN"></a>
+<br>
+<br>
+<a href="http://arma.sourceforge.net/">http://arma.sourceforge.net/"</a>
+</div>
+
+## TP RcppArmadillo : factorielle
+
+Exercice :
+
+
+1. Coder la fonction factorielle (récursivement et avec des boucles) en R et en C++. 
+2. Mesurer le temps d'éxécution des 4 fonctions pour n = 10,100,1000.
+
+## TP RcppArmadillo : correction code R
+
+```{r, eval = FALSE}
+factorielleR_Rec <- function(n) {
+  if(n==1){
+    return(1)
+  } else {
+    return(n*factorielleR_Rec(n-1))
+  }
+}
+factorielleR_Loop <- function(n) {
+  prod <- 1
+  for (i in 1:n) {
+    prod <- prod*i
+  }
+  prod  # Pas besoin de return ici en R
+}
+```
+
+## TP RcppArmadillo : correction code C++
+
+```{Rcpp, eval = FALSE}
+double factorielleCpp_Rec(double n) {  // Le type de retour est crucial (source d'erreur)
+  if(n==1) {
+    return 1;  // Ne pas oublier le ";" !
+  } else {
+    return n*factorielleCpp_Rec(n-1); // Pas de parenthèses !
+  }
+}
+double factorielleCpp_Loop(double n) {
+  double prod = 1;  // Important : il faut initialiser les variables 
+  for(double i=1;i<=n;i++){
+    prod *= i;
+  }
+  return prod;
+}
+```
+
+## TP RcppArmadillo : correction benchmark
+
+```{r}
+library(microbenchmark)
+library(Rcpp)
+library(ggplot2)
+source("factorielle.R")
+sourceCpp("factorielle.cpp")
+
+n <- 100
+tm <- microbenchmark(factorielleR_Rec(n),
+                     factorielleCpp_Rec(n),
+                     factorielleR_Loop(n),
+                     factorielleCpp_Loop(n), times=1000L)
+```
+
+
+## TP RcppArmadillo : correction benchmark (plot)
+
+```{r, message = FALSE, fig.width = 8, fig.height = 4.5, fig.align="center"}
+autoplot(tm)
+```
+
+## TP RcppArmadillo : vectoriser vs boucle
+
+Exercice : 
+
+1. Écrire la quantité $\sum_{q,\ell = 1}^Q \alpha_q \alpha_{\ell}\pi_{q\ell}$ sous forme vectorielle.
+2. Comparer en R et en C++ le temps d'éxécution des codes (boucles et produit matriciel).
+
+
+## TP RcppArmadillo : correction code R
+
+```{r, eval=FALSE}
+formeBilinR_Loop <- function(alpha, pi) {
+  Q <- length(alpha)
+  sum <- 0
+  for(q in 1:Q){
+    for (l in 1:Q) {
+      sum <- sum + alpha[q]*alpha[l]*pi[q,l]
+    }
+  }
+  sum
+}
+formeBilinR_Prod <- function(alpha, pi) {
+  sum <- t(alpha) %*% pi %*% alpha
+  sum
+}
+```
+
+## TP RcppArmadillo : correction code C++
+
+
+```{Rcpp, eval = FALSE}
+double formeBilinCpp_Loop(vec alpha, mat pi) {
+  int Q = pi.n_cols;
+  double sum = 0;
+  for (int q=0; q<Q; q++) {
+    for(int l=0; l<Q; l++) {
+      sum += alpha[q]*alpha[l]*pi(q,l); // Attention aux parenthèses et crochets !
+    }
+  }
+  return sum;
+}
+double formeBilinCpp_Prod(vec alpha, mat pi) {
+  double sum = as_scalar(alpha.t() * pi * alpha);  // Attention aux types ! 
+  return sum;
+}
+```
+
+## TP RcppArmadillo : correction benchmark
+```{r}
+library(microbenchmark)
+library(ggplot2)
+source("formeBilin.R")
+sourceCpp("formeBilin.cpp")
+
+alpha <- 1:100
+pi    <- matrix(1,100,100)
+
+tm <- microbenchmark(formeBilinR_Loop(alpha,pi),
+                     formeBilinCpp_Loop(alpha,pi),
+                     formeBilinR_Prod(alpha,pi),
+                     formeBilinCpp_Prod(alpha,pi), times=1000L)
+```
+
+## TP RcppArmadillo : correction benchmark (plot)
+
+```{r, message = FALSE, fig.width = 8, fig.height = 4.5, fig.align="center"}
+autoplot(tm)
+```
+
+## TP RcppArmadillo : TP d'optimisation
+
+1. Écrire une fonction norme euclidienne au carré d'un vecteur en C++.
+2. Écrire une fonction fr(vec theta, vec X) qui calcule la vraisemblance du vecteur X de gaussiennes de paramètres theta.
+3. Écrire une fonction grr(vec theta, vec X) qui calcule le gradient de la vraisemblance du vecteur X de gaussiennes de paramètres theta.
+4. Simuler 100 gaussiennes de vos paramètres préférés et les estimer avec la fonction optim de R en utilisant fr et grr.
+
+## TP RcppArmadillo : correction optimisation
+
+```{Rcpp, eval = FALSE}
+double norme2(vec x) {
+  return as_scalar(sum(pow(x,2)));
+}
+
+// [[Rcpp::export]]
+double fr(vec theta, vec X) {
+  const double pi = 3.141592653589793238462643383280; 
+  int n = X.n_elem;
+  double m = theta[0];
+  double sigma2 = theta[1];
+  return -(n/2)*log(sigma2*2*pi) - norme2(X-m)/(2*sigma2); 
+}
+
+```
+
+## TP RcppArmadillo : correction optimisation
+
+```{Rcpp, eval = FALSE}
+// [[Rcpp::export]]
+vec grr(vec theta, vec X) {
+  int n = X.n_elem;
+  double m = theta[0];
+  double sigma2 = theta[1];
+  vec gradient(2);
+  gradient[0] = sum(X-m)/sigma2;
+  gradient[1] = -n/(2*sigma2) + norme2(X-m)/(2*sigma2*sigma2);
+  return gradient;
+}
+/*** R
+X <- rnorm(1000, mean = 1, sd = 2)
+theta_Chap <- optim(c(0,1), fr, grr, X=X, control=list(fnscale=-1))$par
+print(theta_Chap)
+*/
+```
+
+<<<<<<< HEAD:3-RcppArmadillo.Rmd
+=======
+## Code Profiling
+
+```{r, fig.width = 9, fig.height = 4.5, fig.align="center", results = "hide"}
+library(profr)
+x <- profr(example(glm))
+plot(x)
+```
+>>>>>>> a18cd9e6179006c0d181ea4665b0859b407a0b76:RcppArmadillo.Rmd
+

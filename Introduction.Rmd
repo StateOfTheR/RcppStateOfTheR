@@ -1,0 +1,95 @@
+---
+title: "Les bases de Rcpp - Introduction"
+author: "Timothée Tabouy & Félix Cheysson & Mathieu Carmassi"
+date: "20 juillet 2018"
+output: 
+  ioslides_presentation:
+    css: styles.css
+    widescreen: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+Pourquoi le C++
+====================================
+
+## Pourquoi utiliser C++
+
+En général on utilise du C++ au lieu de R dans les cas suivant :
+
+- boucles non vectorisables où l'itération dépend des précédents (par exemple les MCMC)
+- usage de fonctions récursives ou l'appel répété un grand nombre de fois à une fonction
+- utilisation de structure de données complexe et non gérée par R
+
+R possède des atouts non négligeables :
+
+- modélisation statistique rapide et facile
+- visualisation de donnée élégante
+- etc...
+
+
+## Exemple
+
+Par exemple si on veut exécuter n fois la fonction :
+$$ x \mapsto \frac{1}{1+x}$$
+
+```{r example}
+f <- function(n, x=1) for (i in 1:n) x=1/(1+x)
+g <- function(n, x=1) for (i in 1:n) x=(1/(1+x))
+h <- function(n, x=1) for (i in 1:n) x=(1+x)^(-1)
+j <- function(n, x=1) for (i in 1:n) x={1/{1+x}}
+k <- function(n, x=1) for (i in 1:n) x=1/{1+x}
+```
+
+Parmi toute ces écritures laquelle est la plus rapide?
+
+## Impact de l'écriture de la fonction en R
+
+```{r exampleR}
+library(rbenchmark)
+N <- 1e6
+benchmark(f(N,1), g(N,1), h(N,1), j(N,1),k(N,1),columns=c("test", "replications",
+                                                          "elapsed", "relative"),
+          order="relative", replications=10)
+```
+
+
+## En C++
+
+```{r exampleCpp}
+library(inline)
+src <- 'int n = as<int>(ns);
+        double x = as<double>(xs);
+        for (int i=0; i<n; i++) x=1/(1+x);
+        return wrap(x); '
+
+l <- cxxfunction(signature(ns="integer",
+                           xs="numeric"),
+                 body=src, plugin="Rcpp")
+```
+On reviendra plus tard sur ces lignes..
+
+
+## Comparaison des performances
+
+```{r comparaison}
+N <- 1e6
+benchmark(f(N,1), g(N,1), h(N,1), j(N,1),k(N,1),l(N,1),columns=c("test", "replications",
+                                                            "elapsed", "relative"),
+          order="relative", replications=10)
+```
+
+
+Plan de la présentation
+====================================
+
+## Plan de la présentation
+
+1. Architecture Rcpp
+2. Syntaxe C++
+3. RcppArmadillo
+4. Intégrer des fonctions R dans RcppArmadillo et création rapide d'un package utilisant du C++
+5. Astuces de codage
+

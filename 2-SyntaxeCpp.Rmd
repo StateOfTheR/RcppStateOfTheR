@@ -1,0 +1,452 @@
+---
+title: "Syntaxe C++"
+author: "Timothée Tabouy & Félix Cheysson & Mathieu Carmassi"
+date: "20 juillet 2018"
+transition: rotate
+transition-speed: fast
+output: 
+  ioslides_presentation:
+    css: styles.css
+    widescreen: true
+---
+
+Principes de syntaxe
+========================================================
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+## Principes de syntaxe
+### Exemple de code
+
+```{Rcpp, eval=FALSE}
+#include <iostream>
+using namespace std;
+
+int main() 
+{
+  cout << "Hello, World!" << endl;
+  // commentaire sur une ligne
+  /*
+   commentaire sur plusieurs lignes
+  */
+  return 0;
+}
+```
+
+## Principes de syntaxe
+### Explications
+
+```{Rcpp, eval=FALSE}
+#include <iostream>
+
+using namespace std;
+```
+
+- `#include` est une commande préprocesseur qui permet de charger des bibliothèques ou library (fichiers en .h)
+et d'utiliser les fonctions qui y sont codées. `<iostream>` pour "Standard Input / Output Streams Library".
+- Un namespace, ou espace de nom (parfois aussi espace de nommage, voire référentiel lexical) est une zone de déclaration d'identificateurs permettant au compilateur de résoudre les conflits de noms.
+
+## Principes de syntaxe
+### Explications
+
+```{Rcpp, eval=FALSE}
+int main() 
+{
+  cout << "Hello, World!" << endl;
+  // commentaire sur une ligne
+  /*
+   commentaire sur plusieurs lignes
+  */
+  return 0;
+}
+```
+
+- `int` indique le type de la variable en sortie de la function `main`.
+- `cout` et `endl` sont deux fonctions de la librarie `iostream` et permet d'écrire dans le flux de sortie (dans le terminal) la phrase "Hello, World!"
+
+
+## Principes de syntaxe
+### Explications
+
+```{Rcpp, eval=FALSE}
+  // commentaire sur une ligne
+  /*
+   commentaire sur plusieurs lignes
+  */
+```
+
+- Pour commenter une ligne il suffit d'ajouter `//` au début
+- Pour commenter plusieurs lignes, il faut les entourer de `/*` et `*/`
+
+## Principes de syntaxe
+### Incrément / Décrément et attribution en C++
+
+|  Code initial       |     racourci          |
+| :-----------------: | :--------------------:|
+| `x = x+1;`          |     `x++;`            | 
+| `x = x-1;`          |     `x--;`            |
+| `x = x + y;`        |  `x += y;`            |
+| `x = x - y;`        | `x -= y;`             |
+| `x = x * y;`        | `x *= y;`             |
+| `x = x / y;`        | `x /= y;`             |
+
+
+Les fonctions en C++
+========================================================
+
+## Comment créer une fonction en C++?
+
+    double sum(double a, double b)
+    {
+        return a+b;
+    }
+
+- `double` devant `sum` correspond au type de la sortie
+- `sum` est le nom de la fonction
+- `double a`, `double b` sont les paramètres de la fonctions (déclarés comme `double`)
+- `;` à la fin des instructions (<span style='color:red'> source d'erreur de compilation </span>)
+
+Les objets
+========================================================
+
+
+## Quels sont les différents type d'objets en C++?
+
+| Type de variables   |     Signification     |
+| :-----------------: | :--------------------:|
+| int                 |         entiers       |
+| float               | réel simple précision |
+| double              | réel double précision |
+| <span style='color:grey'>long double </span> | <span style='color:grey'>réel précision étendu </span> |
+| char                | caractère             |
+| bool                | booléen               |
+| void                | vide                  |
+
+## Quels sont les différents type d'objets en C++?
+
+| Type de variables   |     Signification     |
+| :-----------------: | :--------------------:|
+| <span style='color:red'>int</span>      | <span style='color:red'>entiers</span>     |
+| float               | réel simple précision |
+| double              | réel double précision |
+| <span style='color:grey'>long double </span> | <span style='color:grey'>réel précision étendu </span> |
+| char                | caractère             |
+| bool                | booléen               |
+| void                | vide                  |
+
+
+## Les entiers (1/2)
+
+
+| Type d'entiers   |     Taille     | Signe | Autre nom |
+| :---------: | :--------------------:| :-----------:| :-------:|
+| **int** | taille normale <span style='font-size: 10px'>(de $-32768$ à $32767$) </span> | **signed** : *positif ou négatif* |**signed**|
+| **short int** | taille normale <span style='font-size: 10px'>(de $-32768$ à $32767$) </span> | **signed** : *positif ou négatif* |**signed short**, **short**|
+| **long int** | grande taille (32 bit) <span style='font-size: 10px'>(de $-2,147,483,648$ à $2,147,483,647$) </span> | **signed** : *positif ou négatif* | **long**, **signed long**|
+| **long long int** | grande taille (64 bit) <span style='font-size: 10px'>(de $-9,223,372,036,854,775,808$ à $9,223,372,036,854,775,807$) </span> | **signed** : *positif ou négatif* | **long long**, **signed long long**|
+
+
+## Les entiers (2/2)
+
+| Type d'entiers   |     Taille     | Signe | Autre nom |
+| :---------: | :--------------------:| :-----------:| :-------:|
+| **unsigned int** | taille normale <span style='font-size: 10px'>(de $0$ à $65535$) </span> | **unsigned** : *positif ou nul* | **unsigned**|
+| **unsigned short int** | taille normale <span style='font-size: 10px'>(de $0$ à $65535$) </span> | **unsigned** : *positif ou nul* |**unsigned short**|
+| **unsigned long int** | grande taille (32 bit) <span style='font-size: 10px'>(de $0$ à $4,294,967,295$) </span> | **signed** : *positif ou négatif* | **unsigned long**|
+| **unsigned long long int** | grande taille (64 bit) <span style='font-size: 10px'>(de $0$ à $18,446,744,073,709,551,615$) </span> | **unsigned** : *positif ou nul* | **unsigned long long**|
+
+
+## Quels sont les différents type d'objets en C++?
+
+| Type de variables   |     Signification     |
+| :-----------------: | :--------------------:|
+| int                 |         entiers       |
+| <span style='color:red'> float </span>               | <span style='color:red'>réel simple précision </span>|
+| <span style='color:red'>double </span>              | <span style='color:red'>réel double précision </span> |
+| <span style='color:red'>long double </span> | <span style='color:red'>réel précision étendu </span> |
+| char                | caractère             |
+| bool                | booléen               |
+| void                | vide                  |
+
+
+## Les réels
+
+
+| Type de réels   |     Taille     | Signe |
+| :---------: | :--------------------:| :-----------:|
+| **float** | taille normale <span style='font-size: 10px'>(de $-3.4.10^{38}$ à $3.4.10^{38}$) </span> | **signed** : *positif ou négatif*|
+| **double** | grande taille <span style='font-size: 10px'>(de $-1.7.10^{308}$ à $-1.7.10^{308}$) </span> | **signed** : *positif ou négatif*|
+| **long double** | grande taille <span style='font-size: 10px'>(de $-1.7.10^{308}$ à $-1.7.10^{308}$) </span> | **signed** : *positif ou négatif*|
+
+
+## Quels sont les différents type d'objets en C++?
+
+| Type de variables   |     Signification     |
+| :-----------------: | :--------------------:|
+| int      | entiers     |
+| <span style='color:grey'>float </span>              | <span style='color:grey'>réel simple précision </span> |
+| double              | réel double précision |
+| <span style='color:grey'>long double </span> | <span style='color:grey'>réel précision étendu </span> |
+| <span style='color:red'>char </span>                | <span style='color:red'>caractère </span>             |
+| bool                | booléen               |
+
+
+## Les caractères
+
+| Type de caractères   |     Taille     | Signe |
+| :---------: | :--------------------:| :-----------:|
+| **signed char** | taille normale <span style='font-size: 10px'>(de $-128$ à $127$) </span> | **signed** : *positif ou négatif*|
+| **unsigned char** | grande taille <span style='font-size: 10px'>(de $0$ à $255$) </span> | **unsigned** : *positif ou null*|
+
+<br>
+<br>
+
+**unsigned char** est utile lorsque l'on travaille avec des caratères non ASCII. Si ni **signed** ou **unsigned** n'est renseigné le choix est pris par le compileur.
+
+
+## Quels sont les différents type d'objets en C++?
+
+| Type de variables   |     Signification     |
+| :-----------------: | :--------------------:|
+| int      | entiers     |
+| <span style='color:grey'>float </span>              | <span style='color:grey'>réel simple précision </span> |
+| double              | réel double précision |
+| <span style='color:grey'>long double </span> | <span style='color:grey'>réel précision étendu </span> |
+| char                 | caractère             |
+| <span style='color:red'>bool  </span>              |<span style='color:red'> booléen  </span>             |
+| void                | vide                  |
+
+Problèmes de typage
+==========================
+
+## Typage des variables en mathématiques
+
+
+<span style="color:red; border-style: solid;"> Attention :
+<br>
+<br>
+Lors des opérations mathématiques, ne pas mélanger les types d'objet!
+<br>
+<br>
+Par exemple si on définit `int Q` comme étant le quotient de `int A=1` et de `double B=1.5`.
+<br>
+<br>
+De quelle forme sera le résultat? 0, 1, 0.66?
+<br>
+<br>
+Il faudra faire attention au typage des objets à manipuler...
+</span>
+
+
+
+Les boucles
+========================================================
+
+## Les boucles
+
+Trois types de boucles peuvent être écrites en C++ :
+
+- while
+- do ... while
+- for
+
+## Les boucles
+
+Trois types de boucles peuvent être écrites en C++ :
+
+- <span style='color: red'>while </span>
+- do ... while
+- for
+
+## While
+
+```{Rcpp, eval=FALSE}
+int compteur = 0; // Définition de la variable compteur comme un entier int
+    
+while (compteur < 10)
+{
+    compteur++;
+}
+```
+
+<br>
+
+La condition du `while` se situe entre parenthèse.
+Les instructions à répéter sont entre accolades et <span style='color:red'> terminées d'un point virgule </span>
+
+## Les boucles
+
+Trois types de boucles peuvent être écrites en C++ :
+
+- while
+- <span style='color: red'>do ... while </span>
+- for
+
+## do ... While
+
+```{Rcpp, eval=FALSE}
+int compteur = 0;
+
+do
+{
+    compteur++;
+} while (compteur < 10);
+```
+
+<br>
+
+Autre vision du `while`
+
+## Les boucles
+
+Trois types de boucles peuvent être écrites en C++ :
+
+- while
+- do ... while
+- <span style='color: red'>for </span>
+
+
+## For
+
+```{Rcpp, eval=FALSE}
+for (int compteur = 0 ; compteur < 10 ; compteur++)
+{
+    //intructions;
+}
+```
+
+<br>    
+Dans les conditions du `for`, il y a 3 arguments séparés d'un point virgule :
+
+- Initialisation (et/ou déclaration) de la variable
+- La condition de fin de la boucle for
+- La condition d'incrémentation de la variable
+
+Les structures de contrôle
+========================================================
+
+## Les structures de contrôle
+
+Trois structures :
+
+- if
+- if ... else
+- switch
+
+## Les structures de contrôle
+
+Trois structures :
+
+- <span style="color:red">if </span>
+- if ... else
+- switch
+
+## Le `if`
+
+    if (conditions)
+        execution;
+
+exemple :
+```{Rcpp}
+#include<iostream>
+using namespace std;
+
+int test(int a)
+{
+    if (a > 10)
+        cout << "a est plus grand que 10" << endl;
+    return 0;
+}
+```
+
+
+## Les structures de contrôle
+
+Trois structures :
+
+- if
+- <span style="color:red">if ... else </span>
+- switch
+
+## Le `if ... else ...`
+
+    if (conditions) instruction1;
+    else instruction2;
+
+exemple :
+```{Rcpp}
+#include <iostream>
+using namespace std;
+
+int test(int a)
+{
+    if (a > 10)
+        cout << "a est plus grand que 10" << endl;
+    else
+        cout << "a est inférieur ou égal à 10" << endl;
+    return 0;
+}
+```
+
+
+## Les structures de contrôle
+
+Trois structures :
+
+- if
+- if ... else
+- <span style="color:red">switch </span>
+
+
+## Le `switch`
+
+<div class="columns-2">
+      switch(expression)
+        {
+        case constante1:
+            instructions1;
+        case constante2:
+            instructions2
+        ...
+        default:
+            instructions_default
+        }
+
+  exemple :
+
+```{Rcpp}
+#include <iostream>
+using namespace std;
+
+int test(int a)
+{
+  switch(a)
+  {
+  case 1 :
+    cout << "a vaut 1" << endl;
+    break;
+  case 2 :
+    cout << "a vaut 2" << endl;
+    break;
+  default :
+    cout << "a ne vaut ni 1, ni 2"<< endl;
+  break;
+  }
+  return 0;
+}
+```
+
+</div>
+
+     
+La fonction somme
+========================================================
+
+## Exemple de fonction somme
+
+Faire la somme d'une matrice et d'un scalaire est compliqué en C++ sans charger de librairie.
+
+Il faudrait définir l'objet matrice et ensuite faire une somme terme à terme.
+

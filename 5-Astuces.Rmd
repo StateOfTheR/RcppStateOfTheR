@@ -1,0 +1,362 @@
+---
+title: "Astuces de codage"
+author: "Timothée Tabouy & Félix Cheysson & Mathieu Carmassi"
+date: "20 juillet 2018"
+output: 
+  ioslides_presentation:
+    css: styles.css
+    widescreen: true
+---
+
+<style>
+.forceBreak { -webkit-column-break-after: always; break-after: column; }
+</style>
+
+# Astuces de codage: bonnes pratiques
+
+```{r setup, include=FALSE}
+library(Rcpp)
+library(RcppArmadillo)
+library(microbenchmark)
+library(ggplot2)
+library(knitr)
+library(magrittr)
+library(profr)
+opts_chunk$set(cache = TRUE) # because the compilation takes time, let's cache it
+```
+
+## Pass argument by reference
+
+<div align="center">
+<img src="images/pass-by-reference-vs-pass-by-value-animation.gif" width=750 height=405>
+</div>
+
+## Pass argument by reference {.columns-2}
+
+```{Rcpp, eval=FALSE}
+void byValue 
+  (vec x, double newValue) {
+  x.fill(newValue);
+}
+
+void byRef 
+  (vec& x, double newValue) {
+  x.fill(newValue);
+}
+
+void byRefSafe 
+  (const vec& x, double newValue) {
+  x.fill(newValue);
+}
+```
+
+```{Rcpp, echo=FALSE}
+#include <RcppArmadillo.h>
+
+// [[Rcpp::depends(RcppArmadillo)]]
+using namespace Rcpp;
+using namespace arma;
+
+// [[Rcpp::export]]
+void byValue (vec x, double newValue) {
+  x.fill(newValue);
+}
+
+// [[Rcpp::export]]
+void byRef (vec& x, double newValue) {
+  x.fill(newValue);
+}
+```
+
+<p class="forceBreak"></p>
+
+```{r}
+x <- 1:5 + .1
+x %>% byValue(3.14)
+x
+
+x %>% byRef(3.14)
+x
+
+x <- 1:5
+x %>% byRef(3.14)
+x
+```
+
+## Pass argument by reference {.columns-2}
+
+```{Rcpp, eval=FALSE}
+mat prodByValue (mat X, mat Y) {
+  return X*Y;
+}
+
+mat prodByRef (mat& X, mat& Y) {
+  return X*Y;
+}
+```
+
+```{Rcpp, echo=FALSE}
+#include <RcppArmadillo.h>
+
+// [[Rcpp::depends(RcppArmadillo)]]
+using namespace Rcpp;
+using namespace arma;
+
+// [[Rcpp::export]]
+mat prodByValue (mat X, mat Y) {
+  return X*Y;
+}
+
+// [[Rcpp::export]]
+mat prodByRef (mat& X, mat& Y) {
+  return X*Y;
+}
+```
+
+```{r, cache=FALSE}
+X <- matrix(rnorm(10000), 100, 100)
+Y <- matrix(rnorm(10000), 100, 100)
+
+tm <- microbenchmark(prodByValue(X, Y), 
+                     prodByRef(X, Y))
+```
+
+<p class="forceBreak"></p>
+
+```{r, cache=FALSE, echo=FALSE, fig.width=4, fig.height=5}
+autoplot(tm)
+```
+
+## Inversion de matrices {.columns-2}
+
+```{Rcpp, eval=FALSE}
+vec invProdCpp (mat A, vec b) {
+  return A.i() * b;
+}
+
+vec solveCpp (mat A, vec b) {
+  return solve(A, b);
+}
+```
+
+```{Rcpp, echo=FALSE}
+#include <RcppArmadillo.h>
+
+// [[Rcpp::depends(RcppArmadillo)]]
+using namespace Rcpp;
+using namespace arma;
+
+// [[Rcpp::export]]
+vec invProdCpp (mat A, vec b) {
+  return A.i() * b;
+}
+
+// [[Rcpp::export]]
+vec solveCpp (mat A, vec b) {
+  return solve(A, b);
+}
+```
+
+```{r, cache=FALSE}
+A <- matrix(rnorm(10000), 100, 100)
+b <- rnorm(100)
+
+tm <- microbenchmark(invProdCpp(A, b), 
+                     solveCpp(A, b),
+                     solve(A) %*% b, 
+                     solve(A, b))
+```
+
+<p class="forceBreak"></p>
+
+```{r, cache=FALSE, echo=FALSE, fig.width=4, fig.height=5}
+autoplot(tm)
+```
+
+## Declaration and scope {.columns-2}
+
+```{Rcpp, eval=FALSE}
+mat covOutOfScope (mat X)
+{
+  mat y = zeros(X.n_cols, X.n_cols);
+  rowvec z = rowvec(X.n_cols);
+  
+  for (uword i = 0; i < X.n_rows; i++) {
+    z = X.row(i);
+    y += z.t() * z;
+  }
+  
+  return y / X.n_rows;
+}
+```
+
+<p class="forceBreak"></p>
+
+```{Rcpp, eval=FALSE}
+mat covInScope (mat X) 
+{
+  mat y = zeros(X.n_cols, X.n_cols);
+
+  for (uword i = 0; i < X.n_rows; i++) {
+    rowvec z = X.row(i);
+    y += z.t() * z;
+  }
+  
+  return y / X.n_rows;
+}
+```
+
+```{Rcpp, echo=FALSE}
+#include <RcppArmadillo.h>
+
+// [[Rcpp::depends(RcppArmadillo)]]
+using namespace Rcpp;
+using namespace arma;
+
+// [[Rcpp::export]]
+mat covOutOfScope (mat X) 
+{
+  mat y = zeros(X.n_cols, X.n_cols);
+  rowvec z = rowvec(X.n_cols);
+  
+  for (uword i = 0; i < X.n_rows; i++) {
+    z = X.row(i);
+    y += z.t() * z;
+  }
+  
+  return y / X.n_rows;
+}
+
+// [[Rcpp::export]]
+mat covInScope (mat X) 
+{
+  mat y = zeros(X.n_cols, X.n_cols);
+
+  for (uword i = 0; i < X.n_rows; i++) {
+    rowvec z = X.row(i);
+    y += z.t() * z;
+  }
+  
+  return y / X.n_rows;
+}
+```
+
+## Declaration and scope
+
+```{r, cache=FALSE, out.width='50%', fig.align='center'}
+X <- matrix(rnorm(10000), 100, 100)
+
+tm <- microbenchmark(covOutOfScope(X),
+                     covInScope(X))
+autoplot(tm)
+```
+
+## Matrix storage of elements: column ordering {.columns-2}
+
+```{Rcpp, eval=FALSE}
+mat prodByRowOrdering (mat A, mat B) 
+{
+  mat C = mat(size(A));
+  
+  for (uword i = 0; i < A.n_rows; i++)
+    for (uword j = 0; j < A.n_cols; j++)
+      C(i,j) = A(i,j) * B(i,j);
+  
+  return C;
+}
+```
+
+<p class="forceBreak"></p>
+
+```{Rcpp, eval=FALSE}
+mat prodByColOrdering (mat A, mat B) 
+{
+  mat C = mat(size(A));
+  
+  for (uword j = 0; j < A.n_cols; j++)
+    for (uword i = 0; i < A.n_rows; i++)
+      C(i,j) = A(i,j) * B(i,j);
+  
+  return C;
+}
+```
+
+```{Rcpp, echo=FALSE}
+#include <RcppArmadillo.h>
+
+// [[Rcpp::depends(RcppArmadillo)]]
+using namespace Rcpp;
+using namespace arma;
+
+// [[Rcpp::export]]
+mat prodByRowOrdering (mat A, mat B) 
+{
+  mat C = mat(size(A));
+  
+  for (uword i = 0; i < A.n_rows; i++)
+    for (uword j = 0; j < A.n_cols; j++)
+      C(i,j) = A(i,j) * B(i,j);
+  
+  return C;
+}
+  
+// [[Rcpp::export]]
+mat prodByColOrdering (mat A, mat B)
+{
+  mat C = mat(size(A));
+  
+  for (uword j = 0; j < A.n_cols; j++)
+    for (uword i = 0; i < A.n_rows; i++)
+      C(i,j) = A(i,j) * B(i,j);
+  
+  return C;
+}
+```
+
+## Matrix storage of elements: column ordering
+
+```{r, cache=FALSE, out.width='60%', fig.align='center'}
+A <- matrix(rnorm(10000), 100, 100)
+B <- matrix(rnorm(10000), 100, 100)
+
+tm <- microbenchmark(prodByColOrdering(A, B), prodByRowOrdering(A, B))
+autoplot(tm)
+```
+
+## Code Profiling 
+
+In Rstudio it is easy to identify which part of code is worth coding in C++. This operation is called profiling and documentation are available here:
+
+<div style="text-align:center">
+<a href="https://support.rstudio.com/hc/en-us/articles/218221837-Profiling-with-RStudio"><img src="images/RStudio.png" alt="MDN"></a>
+<br>
+<br>
+</div>
+
+To quicky begin profiling one can select a part of code and then click on Profile > Profile Selected Lines (shortcut Ctrl+Alt+Shift+P).
+
+The package loaded and used is profvis and similarly as microbenchmark it can be run to establish a comparison of function. It will get the time spent line by line of the code.
+
+## Code Profiling - Example 
+
+```{r, cache=FALSE, echo=FALSE}
+times <- 4e5
+cols <- 150
+data <-
+ as.data.frame(x = matrix(rnorm(times * cols, mean = 5),
+ ncol = cols))
+data <- cbind(id = paste0("g", seq_len(times)), data)
+```
+
+```{r, cache=FALSE}
+library(profvis)
+profvis({
+  data1 <- data
+  # Four different ways of getting column means
+  means <- apply(data1[, names(data1) != "id"], 2, mean)
+  means <- colMeans(data1[, names(data1) != "id"])
+  means <- lapply(data1[, names(data1) != "id"], mean)
+  means <- vapply(data1[, names(data1) != "id"], mean, numeric(1))
+})
+```
+
